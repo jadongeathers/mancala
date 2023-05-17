@@ -1,3 +1,5 @@
+import tkinter as tk
+
 class Mancala:
     def __init__(self):
         self.piecesPerPocket = 4
@@ -120,4 +122,122 @@ class Mancala:
             stonesLeftTwo += state[0][7 + i]
 
         return stonesLeftOne == 0 or stonesLeftTwo == 0
+
+    def playGame(self):
+        game = MancalaDisplay()
+        game.playGame()
+
+
+class MancalaDisplay(Mancala):
+    def __init__(self):
+        super().__init__()
+        self.root = tk.Tk()
+        self.root.title('Mancala')
+        self.canvas = tk.Canvas(self.root, width=1000, height=400)
+        self.canvas.pack()
+
+        self.board = self.canvas.create_rectangle(50, 50, 950, 350, outline='black', width=2)
+        self.pockets = []
+        self.banks = []
+
+        self.currentState = self.startState()
+
+        # Pockets for player 1 (indices 0-5)
+        for i in range(6):
+            x = 775 - i * 110
+            y = 125
+            pocket = self.canvas.create_oval(x - 40, y - 40, x + 40, y + 40, fill='white', outline='black', width=2)
+            self.pockets.append(pocket)
+
+        # Pockets for player 2 (indices 7-12)
+        for i in range(6):
+            x = 225 + i * 110
+            y = 275
+            pocket = self.canvas.create_oval(x - 40, y - 40, x + 40, y + 40, fill='white', outline='black', width=2)
+            self.pockets.append(pocket)
+
+        # Player banks
+        x = 115
+        y = 200
+        bank1 = self.canvas.create_rectangle(x - 40, y - 115, x + 40, y + 115, fill='white', outline='black', width=2)
+        self.banks.append(bank1)
+
+        x = 885
+        y = 200
+        bank2 = self.canvas.create_rectangle(x - 40, y - 115, x + 40, y + 115, fill='white', outline='black', width=2)
+        self.banks.append(bank2)
+
+        self.canvas.bind("<Button-1>", self.handleClick)
+
+    def displayState(self, state):
+        pocket_counts = []
+        for i in range(13):
+            if i != 6:
+                count = state[0][i]
+                pocket_counts.append(count)
+
+        bank_counts = []
+        for i in range(2):
+            count = state[0][(i + 1) * 7 - 1]
+            bank_counts.append(count)
+
+        # Clear existing count labels
+        self.canvas.delete('pocket_count')
+        self.canvas.delete('bank_count')
+
+        for i, pocket in enumerate(self.pockets):
+            coords = self.canvas.coords(pocket)
+            x = (coords[0] + coords[2]) / 2
+            y = (coords[1] + coords[3]) / 2
+            self.canvas.create_text(x, y, text=str(pocket_counts[i]), tags='pocket_count')
+
+        for i, bank in enumerate(self.banks):
+            coords = self.canvas.coords(bank)
+            x = (coords[0] + coords[2]) / 2
+            y = (coords[1] + coords[3]) / 2
+            self.canvas.create_text(x, y, text=str(bank_counts[i]), tags='bank_count')
+
+    def handleClick(self, event):
+        x, y = event.x, event.y
+        for i, pocket in enumerate(self.pockets):
+            bbox = self.canvas.bbox(pocket)
+            if bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
+                action = i if i < 6 else i + 1
+                if action in self.generateMoves(self.currentState):
+                    self.makeMove(action)
+                break
+
+    def makeMove(self, action):
+        print('current: ', self.currentState)
+        state, reward = self.succAndReward(self.currentState, action)
+        print('new: ', state)
+        self.displayState(state)
+        print('Reward: ', reward)
+        self.currentState = state
+        if self.isEnd(state):
+            self.showWinner()
+            return
+        print(f"Player {state[1]}'s turn")
+
+    def showWinner(self):
+        sumPlayerOne = sum(self.currentState[0][:6])
+        sumPlayerTwo = sum(self.currentState[0][7:13])
+        if sumPlayerOne > sumPlayerTwo:
+            winner = 'Player 1 wins!'
+        elif sumPlayerTwo > sumPlayerOne:
+            winner = 'Player 2 wins!'
+        else:
+            winner = "It's a tie!"
+        self.canvas.create_text(250, 275, text=winner, font=('Arial', 20), fill='red')
+
+    def playGame(self):
+        print("Player 1's turn")
+        self.displayState(self.currentState)
+        self.root.mainloop()
+
+
+if __name__ == '__main__':
+    mancala = Mancala()
+    mancala.playGame()
+
 
