@@ -1,4 +1,7 @@
+import argparse
 import tkinter as tk
+from algorithms import *
+from tqdm import tqdm
 
 class Mancala:
     def __init__(self):
@@ -138,12 +141,97 @@ class Mancala:
 
         return stonesLeftOne == 0 or stonesLeftTwo == 0
 
-    def playGame(self, gameplay):
+    def getGameInfo(self):
+        agent1 = None
+        agent2 = None
+
+        # Agent 1 selection
+        agentNum = int(input('Select the first agent:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\nYour selection: '))
+        if agentNum not in [1, 2]:
+            agentNum = input('Invalid input. Select an agent type:\n[1]\tRandom Algorithm'
+                             '\n[2]\tGreedy Algorithm\nYour selection: ')
+        if agentNum == 1:
+            agent1 = RandomAlg()
+        if agentNum == 2:
+            agent1 = GreedyAlg()
+
+        # Agent 2 selection
+        agentNum = int(input('Select the second agent:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\nYour selection: '))
+        if agentNum not in [1, 2]:
+            agentNum = input('Invalid input. Select an agent type:\n[1]\tRandom Algorithm'
+                             '\n[2]\tGreedy Algorithm\nYour selection: ')
+        if agentNum == 1:
+            agent2 = RandomAlg()
+        if agentNum == 2:
+            agent2 = GreedyAlg()
+
+        nGames = int(input('Specify the number of games: '))
+        return agent1, agent2, nGames
+
+    def playGame(self, gameplay, verbose=False):
         if gameplay == 'human-human' or gameplay == 'human-computer':
             game = MancalaDisplay(gameplay=gameplay)
-            game.playGame()
-            return # How do we exit the game loop?
-            # TODO: randomize who is the player and who is the computer
+            game.playGame(gameplay, verbose=verbose)
+
+        elif gameplay == 'computer-computer':
+            agent1, agent2, nGames = self.getGameInfo()
+            gameResults = {}
+
+            for i in tqdm(range(nGames)):
+
+                state = self.startState()
+                while not self.isEnd(state):
+                    # Agent 1 makes a move
+                    action = agent1.getNextMove(state)
+                    state, reward = self.succAndReward(state, action)
+
+                    if self.isEnd(state):
+                        break
+
+                    # Agent 2 makes a move
+                    action = agent2.getNextMove(state)
+                    state, reward = self.succAndReward(state, action)
+
+                winner, agent1Score, agent2Score = self.getWinner(state, verbose)
+                results = {'winner': winner, 'agent1Score': agent1Score, 'agent2Score': agent2Score}
+                gameResults[i] = results
+
+            self.reportGameStats(gameResults)
+
+        else:
+            print('Please specify a valid gameplay using --gameplay')
+
+    def reportGameStats(self, gameResults):
+        numAgent1Wins = sum([1 for key in gameResults if gameResults[key]['winner'] == 'Player 1 wins!'])
+        numAgent2Wins = sum([1 for key in gameResults if gameResults[key]['winner'] == 'Player 2 wins!'])
+        numTies = sum([1 for key in gameResults if gameResults[key]['winner'] == "It's a tie!"])
+        totalGames = numAgent1Wins + numAgent2Wins + numTies
+        agent1WinRate = numAgent1Wins / totalGames
+        agent2WinRate = numAgent2Wins / totalGames
+        tieRate = numTies / totalGames
+        print('\n')
+        print('===== GAME STATISTICS =====')
+        print(f'Player 1 win rate:\t {agent1WinRate} ({numAgent1Wins} / {totalGames})')
+        print(f'Player 2 win rate:\t {agent2WinRate} ({numAgent2Wins} / {totalGames})')
+        print(f'Tie rate:\t\t {tieRate} ({numTies} / {totalGames})')
+        print('\n')
+
+    def getWinner(self, state, verbose):
+        sumPlayerOne = state[0][6]
+        sumPlayerTwo = state[0][13]
+        if sumPlayerOne > sumPlayerTwo:
+            winner = 'Player 1 wins!'
+        elif sumPlayerTwo > sumPlayerOne:
+            winner = 'Player 2 wins!'
+        else:
+            winner = "It's a tie!"
+        if verbose:
+            print(winner)
+            print('Final scores:')
+            print('Player 1: ', sumPlayerOne)
+            print('Player 2: ', sumPlayerTwo)
+        return winner, sumPlayerOne, sumPlayerTwo
+
 
 class MancalaDisplay(Mancala):
     def __init__(self, gameplay):
@@ -253,14 +341,25 @@ class MancalaDisplay(Mancala):
             winner = "It's a tie!"
         self.canvas.create_text(200, 350, text=winner, font=('Arial', 20), fill='red')
 
-    def playGame(self):
-        print("Player 1's turn")
-        self.displayState(self.currentState)
-        self.root.mainloop()
+    def playGame(self, gameplay, verbose=False):
+        if gameplay == 'human-human':
+            print("Player 1's turn")
+            self.displayState(self.currentState)
+            self.root.mainloop()
+        elif gameplay == 'human-computer':
+            agent = None
+            agentNum = input('Select an agent type:\n[1]\t Greedy Algorithm\nYour selection: ')
+            pass
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--gameplay', choices=['human-human', 'human-computer', 'computer-computer'],
+                        default='human-computer',
+                        help='The mode of gameplay')
+    parser.add_argument('--verbose', action='store_true')
+    args = parser.parse_args()
     mancala = Mancala()
-    mancala.playGame('human-human')
+    mancala.playGame(args.gameplay, args.verbose)
 
 

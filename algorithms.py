@@ -1,11 +1,26 @@
+import random
 from mancala import Mancala
 
-class GreedyAlg():
+
+class RandomAlg(Mancala):
     def __init__(self):
         super().__init__()
 
-    def getNextGreedyMove(self, state):
-        possibleActions = Mancala.generateMoves(state)
+    def getNextMove(self, state):
+        possibleActions = self.generateMoves(state)
+        action = random.choice(possibleActions)
+        return action
 
-        return max([Mancala.succAndReward(state, action) for action in possibleActions], key=lambda succReward: succReward[1])
+
+class GreedyAlg(Mancala):
+    def __init__(self):
+        super().__init__()
+
+    def getNextMove(self, state):
+        possibleActions = self.generateMoves(state)
+        rewards = [self.succAndReward(state, action)[1] for action in possibleActions]
+        bestIndices = [i for i in range(len(possibleActions)) if rewards[i] == max(rewards)]
+        actionIndex = random.choice(bestIndices)
+        action = possibleActions[actionIndex]
+        return action
 
