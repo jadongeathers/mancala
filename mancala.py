@@ -31,7 +31,7 @@ class Mancala:
         # If no more pieces are on your side, the other player captures
         # everything on their side
         player = state[1]
-        if self.isEnd(state):
+        def returnEndState(player):
             sumOne = 0
             sumTwo = 0
             for i in range(6):
@@ -76,12 +76,16 @@ class Mancala:
         # If the last piece lands in the bank, we go again
         if player == 1 and currDropIndex == 6:
             state[0][currDropIndex] += 1
-
-            return (state, state[0][6] - origBankScore)
+            if self.isEnd(state):
+                return returnEndState(player)
+            else:
+                return (state, state[0][6] - origBankScore)
         elif player == 2 and currDropIndex == 13:
             state[0][currDropIndex] += 1
-
-            return (state, state[0][13] - origBankScore)
+            if self.isEnd(state):
+                return returnEndState(player)
+            else:
+                return (state, state[0][13] - origBankScore)
 
         # If the last piece lands on your side in an empty tray,
         # win the pieces in that pocket and the opponent's adjacent
@@ -92,8 +96,10 @@ class Mancala:
                 state[0][(12 - currDropIndex)] = 0
             else:
                 state[0][currDropIndex] += 1
-
-            return ([state[0], 2], state[0][6] - origBankScore)
+            if self.isEnd(state):
+                return returnEndState(player)
+            else:
+                return ([state[0], 2], state[0][6] - origBankScore)
 
         if player == 2 and currDropIndex < 13:
             if state[0][currDropIndex] == 0 and state[0][12 - currDropIndex] != 0:
@@ -102,15 +108,24 @@ class Mancala:
             else:
                 state[0][currDropIndex] += 1
 
-            return ([state[0], 1], state[0][13] - origBankScore)
+            if self.isEnd(state):
+                return returnEndState(player)
+            else:
+                return ([state[0], 1], state[0][13] - origBankScore)
 
         if currDropIndex > 12:
-                currDropIndex = 0
+            currDropIndex = 0
         state[0][currDropIndex] += 1
         if player == 1:
-            return ([state[0], 2], state[0][6] - origBankScore)
+            if self.isEnd(state):
+                return returnEndState(player)
+            else:
+                return ([state[0], 2], state[0][6] - origBankScore)
         else:
-            return ([state[0], 1], state[0][13] - origBankScore)
+            if self.isEnd(state):
+                return returnEndState(player)
+            else:
+                return ([state[0], 1], state[0][13] - origBankScore)
 
 
     def isEnd(self, state):
@@ -129,7 +144,6 @@ class Mancala:
             game.playGame()
             return # How do we exit the game loop?
             # TODO: randomize who is the player and who is the computer
-
 
 class MancalaDisplay(Mancala):
     def __init__(self, gameplay):
@@ -219,16 +233,18 @@ class MancalaDisplay(Mancala):
         print('Reward: ', reward)
         self.currentState = state
         if self.isEnd(state):
-            state, reward = self.succAndReward(self.currentState, action)
-            self.displayState(state)
-            print('Reward: ', reward)
+            #state, reward = self.succAndReward(self.currentState, action)
+            #self.displayState(state)
+            #print('Reward: ', reward)
             self.showWinner()
             return
         print(f"Player {state[1]}'s turn")
 
     def showWinner(self):
-        sumPlayerOne = sum(self.currentState[0][:6])
-        sumPlayerTwo = sum(self.currentState[0][7:13])
+        #sumPlayerOne = sum(self.currentState[0][:6])
+        sumPlayerOne = self.currentState[0][6]
+        #sumPlayerTwo = sum(self.currentState[0][7:13])
+        sumPlayerTwo = self.currentState[0][13]
         if sumPlayerOne > sumPlayerTwo:
             winner = 'Player 1 wins!'
         elif sumPlayerTwo > sumPlayerOne:
@@ -245,6 +261,6 @@ class MancalaDisplay(Mancala):
 
 if __name__ == '__main__':
     mancala = Mancala()
-    mancala.playGame()
+    mancala.playGame('human-human')
 
 
