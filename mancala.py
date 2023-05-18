@@ -87,7 +87,7 @@ class Mancala:
         # win the pieces in that pocket and the opponent's adjacent
         # pocket
         if player == 1 and currDropIndex < 6:
-            if state[0][currDropIndex] == 0:
+            if state[0][currDropIndex] == 0 and state[0][12 - currDropIndex] != 0:
                 state[0][6] += 1 + state[0][(12 - currDropIndex)]
                 state[0][(12 - currDropIndex)] = 0
             else:
@@ -96,7 +96,7 @@ class Mancala:
             return ([state[0], 2], state[0][6] - origBankScore)
 
         if player == 2 and currDropIndex < 13:
-            if state[0][currDropIndex] == 0:
+            if state[0][currDropIndex] == 0 and state[0][12 - currDropIndex] != 0:
                 state[0][13] += 1 + state[0][(12 - currDropIndex)]
                 state[0][(12 - currDropIndex)] = 0
             else:
@@ -123,20 +123,24 @@ class Mancala:
 
         return stonesLeftOne == 0 or stonesLeftTwo == 0
 
-    def playGame(self):
-        game = MancalaDisplay()
-        game.playGame()
+    def playGame(self, gameplay):
+        if gameplay == 'human-human' or gameplay == 'human-computer':
+            game = MancalaDisplay(gameplay=gameplay)
+            game.playGame()
+            return # How do we exit the game loop?
+            # TODO: randomize who is the player and who is the computer
 
 
 class MancalaDisplay(Mancala):
-    def __init__(self):
+    def __init__(self, gameplay):
         super().__init__()
         self.root = tk.Tk()
         self.root.title('Mancala')
-        self.canvas = tk.Canvas(self.root, width=1000, height=400)
+        self.canvas = tk.Canvas(self.root, width=400, height=700)
         self.canvas.pack()
+        self.gameplay = gameplay
 
-        self.board = self.canvas.create_rectangle(50, 50, 950, 350, outline='black', width=2)
+        self.board = self.canvas.create_rectangle(50, 10, 350, 690, outline='black', width=2)
         self.pockets = []
         self.banks = []
 
@@ -144,27 +148,27 @@ class MancalaDisplay(Mancala):
 
         # Pockets for player 1 (indices 0-5)
         for i in range(6):
-            x = 775 - i * 110
-            y = 125
-            pocket = self.canvas.create_oval(x - 40, y - 40, x + 40, y + 40, fill='white', outline='black', width=2)
+            x = 120
+            y = 130 + 88 * i
+            pocket = self.canvas.create_oval(x - 37.5, y - 37.5, x + 37.5, y + 37.5, fill='white', outline='black', width=2)
             self.pockets.append(pocket)
 
         # Pockets for player 2 (indices 7-12)
         for i in range(6):
-            x = 225 + i * 110
-            y = 275
-            pocket = self.canvas.create_oval(x - 40, y - 40, x + 40, y + 40, fill='white', outline='black', width=2)
+            x = 280
+            y = 570 - 88 * i
+            pocket = self.canvas.create_oval(x - 37.5, y - 37.5, x + 37.5, y + 37.5, fill='white', outline='black', width=2)
             self.pockets.append(pocket)
 
         # Player banks
-        x = 115
-        y = 200
-        bank1 = self.canvas.create_rectangle(x - 40, y - 115, x + 40, y + 115, fill='white', outline='black', width=2)
+        x = 200
+        y = 650
+        bank1 = self.canvas.create_rectangle(x - 115, y - 30, x + 115, y + 30, fill='white', outline='black', width=2)
         self.banks.append(bank1)
 
-        x = 885
-        y = 200
-        bank2 = self.canvas.create_rectangle(x - 40, y - 115, x + 40, y + 115, fill='white', outline='black', width=2)
+        x = 200
+        y = 50
+        bank2 = self.canvas.create_rectangle(x - 115, y - 30, x + 115, y + 30, fill='white', outline='black', width=2)
         self.banks.append(bank2)
 
         self.canvas.bind("<Button-1>", self.handleClick)
@@ -215,6 +219,9 @@ class MancalaDisplay(Mancala):
         print('Reward: ', reward)
         self.currentState = state
         if self.isEnd(state):
+            state, reward = self.succAndReward(self.currentState, action)
+            self.displayState(state)
+            print('Reward: ', reward)
             self.showWinner()
             return
         print(f"Player {state[1]}'s turn")
@@ -228,7 +235,7 @@ class MancalaDisplay(Mancala):
             winner = 'Player 2 wins!'
         else:
             winner = "It's a tie!"
-        self.canvas.create_text(250, 275, text=winner, font=('Arial', 20), fill='red')
+        self.canvas.create_text(200, 350, text=winner, font=('Arial', 20), fill='red')
 
     def playGame(self):
         print("Player 1's turn")
