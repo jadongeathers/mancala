@@ -3,6 +3,7 @@ import tkinter as tk
 from algorithms import *
 from tqdm import tqdm
 
+
 class Mancala:
     def __init__(self):
         self.piecesPerPocket = 4
@@ -130,7 +131,6 @@ class Mancala:
             else:
                 return ([state[0], 1], state[0][13] - origBankScore)
 
-
     def isEnd(self, state):
         # If our side is empty or the other side is empty, True
         stonesLeftOne = 0
@@ -141,12 +141,12 @@ class Mancala:
 
         return stonesLeftOne == 0 or stonesLeftTwo == 0
 
-    def getGameInfo(self):
+    def getGameInfo(self, gameplay):
         agent1 = None
         agent2 = None
 
         # Agent 1 selection
-        agentNum = int(input('Select the first agent:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\nYour selection: '))
+        agentNum = int(input('Select agent 1:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\nYour selection: '))
         if agentNum not in [1, 2]:
             agentNum = input('Invalid input. Select an agent type:\n[1]\tRandom Algorithm'
                              '\n[2]\tGreedy Algorithm\nYour selection: ')
@@ -155,15 +155,16 @@ class Mancala:
         if agentNum == 2:
             agent1 = GreedyAlg()
 
-        # Agent 2 selection
-        agentNum = int(input('Select the second agent:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\nYour selection: '))
-        if agentNum not in [1, 2]:
-            agentNum = input('Invalid input. Select an agent type:\n[1]\tRandom Algorithm'
-                             '\n[2]\tGreedy Algorithm\nYour selection: ')
-        if agentNum == 1:
-            agent2 = RandomAlg()
-        if agentNum == 2:
-            agent2 = GreedyAlg()
+        if gameplay != 'human-computer':
+            # Agent 2 selection
+            agentNum = int(input('Select agent 2:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\nYour selection: '))
+            if agentNum not in [1, 2]:
+                agentNum = input('Invalid input. Select an agent type:\n[1]\tRandom Algorithm'
+                                 '\n[2]\tGreedy Algorithm\nYour selection: ')
+            if agentNum == 1:
+                agent2 = RandomAlg()
+            if agentNum == 2:
+                agent2 = GreedyAlg()
 
         nGames = int(input('Specify the number of games: '))
         return agent1, agent2, nGames
@@ -174,7 +175,7 @@ class Mancala:
             game.playGame(gameplay, verbose=verbose)
 
         elif gameplay == 'computer-computer':
-            agent1, agent2, nGames = self.getGameInfo()
+            agent1, agent2, nGames = self.getGameInfo(gameplay)
             gameResults = {}
 
             for i in tqdm(range(nGames)):
@@ -182,18 +183,15 @@ class Mancala:
                 state = self.startState()
                 while not self.isEnd(state):
                     # Agent 1 makes a move
-                    action = agent1.getNextMove(state)
-                    state, reward = self.succAndReward(state, action)
-
-                    if self.isEnd(state):
-                        break
-
-                    # Agent 2 makes a move
-                    action = agent2.getNextMove(state)
-                    state, reward = self.succAndReward(state, action)
+                    if state[1] == 1:
+                        action = agent1.getNextMove(state)
+                        state, reward = self.succAndReward(state, action)
+                    else:
+                        action = agent2.getNextMove(state)
+                        state, reward = self.succAndReward(state, action)
 
                 winner, agent1Score, agent2Score = self.getWinner(state, verbose)
-                results = {'winner': winner, 'agent1Score': agent1Score, 'agent2Score': agent2Score}
+                results = {'winner': winner, 'player1Score': agent1Score, 'player2Score': agent2Score}
                 gameResults[i] = results
 
             self.reportGameStats(gameResults)
@@ -245,6 +243,7 @@ class MancalaDisplay(Mancala):
         self.board = self.canvas.create_rectangle(50, 10, 350, 690, outline='black', width=2)
         self.pockets = []
         self.banks = []
+        self.clickedPocket = tk.IntVar()
 
         self.currentState = self.startState()
 
@@ -308,30 +307,23 @@ class MancalaDisplay(Mancala):
         for i, pocket in enumerate(self.pockets):
             bbox = self.canvas.bbox(pocket)
             if bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
+                self.clickedPocket.set(i if i < 6 else i + 1)
                 action = i if i < 6 else i + 1
                 if action in self.generateMoves(self.currentState):
                     self.makeMove(action)
                 break
 
     def makeMove(self, action):
-        print('current: ', self.currentState)
         state, reward = self.succAndReward(self.currentState, action)
-        print('new: ', state)
         self.displayState(state)
-        print('Reward: ', reward)
         self.currentState = state
         if self.isEnd(state):
-            #state, reward = self.succAndReward(self.currentState, action)
-            #self.displayState(state)
-            #print('Reward: ', reward)
             self.showWinner()
             return
         print(f"Player {state[1]}'s turn")
 
     def showWinner(self):
-        #sumPlayerOne = sum(self.currentState[0][:6])
         sumPlayerOne = self.currentState[0][6]
-        #sumPlayerTwo = sum(self.currentState[0][7:13])
         sumPlayerTwo = self.currentState[0][13]
         if sumPlayerOne > sumPlayerTwo:
             winner = 'Player 1 wins!'
@@ -340,16 +332,62 @@ class MancalaDisplay(Mancala):
         else:
             winner = "It's a tie!"
         self.canvas.create_text(200, 350, text=winner, font=('Arial', 20), fill='red')
+        self.root.after(5000, self.root.quit)
 
     def playGame(self, gameplay, verbose=False):
         if gameplay == 'human-human':
             print("Player 1's turn")
             self.displayState(self.currentState)
             self.root.mainloop()
+
         elif gameplay == 'human-computer':
-            agent = None
-            agentNum = input('Select an agent type:\n[1]\t Greedy Algorithm\nYour selection: ')
-            pass
+            agent1, _, nGames = self.getGameInfo(gameplay)
+            players = ['human', 'computer']
+            firstPlayer = random.choice(players)
+            secondPlayer = list(set(players) - set(firstPlayer))[0]
+
+            if firstPlayer == 'human':
+                print('You go first.')
+            else:
+                print('The computer goes first.')
+
+            gameResults = {}
+            for i in range(nGames):
+
+                state = self.startState()
+                self.displayState(self.currentState)
+                print("Player 1's turn")
+                while not self.isEnd(state):
+                    # Player 1 makes a move
+                    if state[1] == 1:
+                        if firstPlayer == 'human':  # Human goes
+                            self.root.wait_variable(self.clickedPocket)
+                            action = self.clickedPocket.get()
+                            self.clickedPocket.set(None)
+                            print('human picked: ', action)
+                        else:  # Computer goes
+                            action = agent1.getNextMove(state)
+                            print('computer picked: ', action)
+
+                    # Player 2 makes a move
+                    else:
+                        if secondPlayer == 'human':  # Human goes
+                            self.root.wait_variable(self.clickedPocket)
+                            action = self.clickedPocket.get()
+                            self.clickedPocket.set(None)
+                            print('human picked: ', action)
+                        else:  # Computer goes
+                            action = agent1.getNextMove(state)
+                            print('computer picked: ', action)
+                    self.makeMove(action)
+                    state, reward = self.succAndReward(state, action)
+                    self.displayState(self.currentState)
+
+                winner, player1Score, player2Score = self.getWinner(state, verbose)
+                results = {'winner': winner, 'player1Score': player1Score, 'player2Score': player2Score}
+                gameResults[i] = results
+
+            self.reportGameStats(gameResults)
 
 
 if __name__ == '__main__':
