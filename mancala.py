@@ -1,4 +1,5 @@
 import argparse
+import time
 import tkinter as tk
 from algorithms import *
 from tqdm import tqdm
@@ -318,6 +319,8 @@ class MancalaDisplay(Mancala):
         self.displayState(state)
         self.currentState = state
         if self.isEnd(state):
+            print('isend:')
+            print(state)
             self.showWinner()
             return
         print(f"Player {state[1]}'s turn")
@@ -334,6 +337,22 @@ class MancalaDisplay(Mancala):
         self.canvas.create_text(200, 350, text=winner, font=('Arial', 20), fill='red')
         self.root.after(5000, self.root.quit)
 
+    def makeHumanMove(self):
+        print('Making human move')
+        self.root.wait_variable(self.clickedPocket)
+        action = self.clickedPocket.get()
+        print('action: ', action)
+        self.clickedPocket.set(-1)
+        self.makeMove(action)
+
+    def makeComputerMove(self, agent):
+        print('Making computer move')
+        action = agent.getNextMove(self.currentState)
+        print('action: ', action)
+        time.sleep(2)
+        self.makeMove(action)
+
+
     def playGame(self, gameplay, verbose=False):
         if gameplay == 'human-human':
             print("Player 1's turn")
@@ -341,10 +360,10 @@ class MancalaDisplay(Mancala):
             self.root.mainloop()
 
         elif gameplay == 'human-computer':
-            agent1, _, nGames = self.getGameInfo(gameplay)
+            agent, _, nGames = self.getGameInfo(gameplay)
             players = ['human', 'computer']
             firstPlayer = random.choice(players)
-            secondPlayer = list(set(players) - set(firstPlayer))[0]
+            secondPlayer = list(set(players) - {firstPlayer})[0]
 
             if firstPlayer == 'human':
                 print('You go first.')
@@ -353,37 +372,28 @@ class MancalaDisplay(Mancala):
 
             gameResults = {}
             for i in range(nGames):
-
-                state = self.startState()
+                self.currentState = self.startState()
                 self.displayState(self.currentState)
                 print("Player 1's turn")
-                while not self.isEnd(state):
+
+                while not self.isEnd(self.currentState):
+                    print('state: ', self.currentState)
+
                     # Player 1 makes a move
-                    if state[1] == 1:
-                        if firstPlayer == 'human':  # Human goes
-                            self.root.wait_variable(self.clickedPocket)
-                            action = self.clickedPocket.get()
-                            self.clickedPocket.set(None)
-                            print('human picked: ', action)
-                        else:  # Computer goes
-                            action = agent1.getNextMove(state)
-                            print('computer picked: ', action)
+                    if self.currentState[1] == 1:
+                        if firstPlayer == 'human':
+                            self.makeHumanMove()
+                        else:
+                            self.makeComputerMove(agent)
 
                     # Player 2 makes a move
                     else:
-                        if secondPlayer == 'human':  # Human goes
-                            self.root.wait_variable(self.clickedPocket)
-                            action = self.clickedPocket.get()
-                            self.clickedPocket.set(None)
-                            print('human picked: ', action)
-                        else:  # Computer goes
-                            action = agent1.getNextMove(state)
-                            print('computer picked: ', action)
-                    self.makeMove(action)
-                    state, reward = self.succAndReward(state, action)
-                    self.displayState(self.currentState)
+                        if secondPlayer == 'human':
+                            self.makeHumanMove()
+                        else:
+                            self.makeComputerMove(agent)
 
-                winner, player1Score, player2Score = self.getWinner(state, verbose)
+                winner, player1Score, player2Score = self.getWinner(self.currentState, verbose)
                 results = {'winner': winner, 'player1Score': player1Score, 'player2Score': player2Score}
                 gameResults[i] = results
 
