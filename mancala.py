@@ -81,6 +81,13 @@ class Mancala:
             numStones -= 1
             currDropIndex += 1
 
+        if player == 1 and currDropIndex == 13:
+            currDropIndex = 0
+        if player == 2 and currDropIndex == 6:
+            currDropIndex = 7
+        if player == 2 and currDropIndex == 14:
+            currDropIndex = 0
+
         # If the last piece lands in the bank, we go again
         if player == 1 and currDropIndex == 6:
             state[0][currDropIndex] += 1
@@ -110,7 +117,7 @@ class Mancala:
                 return ([state[0], 2], state[0][6] - origBankScore)
 
         if player == 2 and currDropIndex < 13:
-            if state[0][currDropIndex] == 0 and state[0][12 - currDropIndex] != 0:
+            if currDropIndex > 6 and state[0][currDropIndex] == 0 and state[0][12 - currDropIndex] != 0:
                 state[0][13] += 1 + state[0][(12 - currDropIndex)]
                 state[0][(12 - currDropIndex)] = 0
             else:
@@ -121,8 +128,8 @@ class Mancala:
             else:
                 return ([state[0], 1], state[0][13] - origBankScore)
 
-        if currDropIndex > 12:
-            currDropIndex = 0
+        # if currDropIndex > 12:
+        #     currDropIndex = 0
         state[0][currDropIndex] += 1
         if player == 1:
             if self.isEnd(state):
