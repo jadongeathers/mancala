@@ -157,25 +157,29 @@ class Mancala:
         agent2 = None
 
         # Agent 1 selection
-        agentNum = int(input('Select agent 1:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\nYour selection: '))
-        if agentNum not in [1, 2]:
+        agentNum = int(input('Select agent 1:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\nYour selection: '))
+        if agentNum not in [1, 2, 3]:
             agentNum = input('Invalid input. Select an agent type:\n[1]\tRandom Algorithm'
-                             '\n[2]\tGreedy Algorithm\nYour selection: ')
+                             '\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\nYour selection: ')
         if agentNum == 1:
             agent1 = RandomAlg()
         if agentNum == 2:
             agent1 = GreedyAlg()
+        if agentNum == 3:
+            agent1 = MinimaxAlphaBetaAlg()
 
         if gameplay != 'human-computer':
             # Agent 2 selection
-            agentNum = int(input('Select agent 2:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\nYour selection: '))
-            if agentNum not in [1, 2]:
+            agentNum = int(input('Select agent 2:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\nYour selection: '))
+            if agentNum not in [1, 2, 3]:
                 agentNum = input('Invalid input. Select an agent type:\n[1]\tRandom Algorithm'
-                                 '\n[2]\tGreedy Algorithm\nYour selection: ')
+                                 '\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\nYour selection: ')
             if agentNum == 1:
                 agent2 = RandomAlg()
             if agentNum == 2:
                 agent2 = GreedyAlg()
+            if agentNum == 3:
+                agent2 = MinimaxAlphaBetaAlg()
 
         nGames = int(input('Specify the number of games: '))
         return agent1, agent2, nGames
@@ -395,12 +399,12 @@ class MancalaDisplay(Mancala):
         elif gameplay == 'human-computer':
             agent, _, nGames = self.getGameInfo(gameplay)
             players = ['human', 'computer']
-            #firstPlayer = random.choice(players)
-            firstPlayer = 'human' # Setting to human for testing purposes - remember to uncomment previous line
+            firstPlayer = random.choice(players)
+            #firstPlayer = 'human' # Setting to human for testing purposes - remember to uncomment previous line
 
 
-            #secondPlayer = list(set(players) - {firstPlayer})[0]
-            secondPlayer = ''
+            secondPlayer = list(set(players) - {firstPlayer})[0]
+            #secondPlayer = ''
 
             if firstPlayer == 'human':
                 print('You go first.')
@@ -462,6 +466,121 @@ class GreedyAlg(Mancala):
         return action
 
 
+class MinimaxAlphaBetaAlg(Mancala):
+    def __init__(self):
+        super().__init__()
+        self.depth = 2
+
+    def evaluationFunction(self, state):
+        # Evaluation will be difference in p1 score vs p2
+        player = state[1]
+        if player == 1:
+            return state[0][6] - state[0][13]
+        else:
+            return state[0][13] - state[0][6]
+
+    def endScore(self, state):
+        player = state[1]
+        winReward = 100
+        diff = 0
+        if player == 1:
+            diff = state[0][6] - state[0][13]
+        else:
+            diff = state[0][13] - state[0][6]
+
+        if diff > 0:
+            return winReward + diff
+        elif diff < 0:
+            return -winReward + diff
+        else:
+            return 0
+
+    def getNextMove(self, state):
+
+        def findBestAction(state, depth, currPlayer, maxPlayer, alpha, beta):
+            if self.isEnd(state):
+                return self.endScore(state)
+            if depth == 0:
+                return self.evaluationFunction(state)
+
+            if currPlayer == maxPlayer:
+                # Max player layer, want max over min player actions
+                valuePlusAction = None
+                for potentialAction in self.generateMoves(state):
+                    if valuePlusAction is None:
+                        if currPlayer == 1:
+                            valuePlusAction = (
+                            findBestAction(self.succAndReward(state, potentialAction)[0], depth,
+                                                2, maxPlayer, alpha, beta), potentialAction)
+                        else:
+                            valuePlusAction = (
+                                findBestAction(self.succAndReward(state, potentialAction)[0], depth,
+                                               1, maxPlayer, alpha, beta), potentialAction)
+                    else:
+                        potentialValuePlusAction = None
+                        if currPlayer == 1:
+                            potentialValuePlusAction = (
+                            findBestAction(self.succAndReward(state, potentialAction)[0], depth,
+                                                2, maxPlayer, alpha, beta), potentialAction)
+                        else:
+                            potentialValuePlusAction = (
+                                findBestAction(self.succAndReward(state, potentialAction)[0], depth,
+                                               1, maxPlayer, alpha, beta), potentialAction)
+
+                        valuePlusAction = max(valuePlusAction, potentialValuePlusAction)
+
+                    if beta is not None and valuePlusAction[0] > beta:
+                        break
+
+                    if alpha is None:
+                        alpha = valuePlusAction[0]
+                    else:
+                        alpha = max(alpha, valuePlusAction[0])
+
+                if depth == self.depth:
+                    #print(valuePlusAction[0])
+                    return valuePlusAction[1]
+                else:
+                    return valuePlusAction[0]
+
+            else:
+                valuePlusAction = None
+                for potentialAction in self.generateMoves(state):
+                    if valuePlusAction is None:
+                        if currPlayer == 1:
+                            valuePlusAction = (
+                            findBestAction(self.succAndReward(state, potentialAction)[0], depth - 1,
+                                                2, maxPlayer, alpha, beta), potentialAction)
+                        else:
+                            valuePlusAction = (
+                                findBestAction(self.succAndReward(state, potentialAction)[0], depth - 1,
+                                               1, maxPlayer, alpha, beta), potentialAction)
+                    else:
+                        potentialValuePlusAction = None
+                        if currPlayer == 1:
+                            potentialValuePlusAction = (
+                            findBestAction(self.succAndReward(state, potentialAction)[0], depth - 1,
+                                                2, maxPlayer, alpha, beta), potentialAction)
+                        else:
+                            potentialValuePlusAction = (
+                                findBestAction(self.succAndReward(state, potentialAction)[0], depth - 1,
+                                               1, maxPlayer, alpha, beta), potentialAction)
+
+                        valuePlusAction = min(valuePlusAction, potentialValuePlusAction)
+
+                    if alpha is not None and valuePlusAction[0] < alpha:
+                        break
+
+                    if beta is None:
+                        beta = valuePlusAction[0]
+                    else:
+                        beta = min(beta, valuePlusAction[0])
+
+                return valuePlusAction[0]
+
+
+        maxPlayer = state[1]
+        return findBestAction(state, self.depth, maxPlayer, maxPlayer, None, None)
 
 
 if __name__ == '__main__':
