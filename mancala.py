@@ -185,26 +185,14 @@ class Mancala:
             for i in tqdm(range(nGames)):
 
                 state = self.startState()
-                #print('Initial State: ', state)
                 while not self.isEnd(state):
                     # Agent 1 makes a move
                     if state[1] == 1:
-                        #print('Player: ', state[1])
-                        #print('Entrance State: ', state)
                         action = agent1.getNextMove(state)
-                        #print('Entrance State after find action: ', state)
-                        #print(self.succAndReward(state, action))
                         state, reward = self.succAndReward(state, action)
-
-                        #print('Action: ', action)
-                        #print('State: ', state)
                     else:
-                        #print('Player: ', state[1])
                         action = agent2.getNextMove(state)
                         state, reward = self.succAndReward(state, action)
-
-                        #print('Action: ', action)
-                        #print('State: ', state)
 
                 winner, agent1Score, agent2Score = self.getWinner(state, verbose)
                 results = {'winner': winner, 'player1Score': agent1Score, 'player2Score': agent2Score}
@@ -333,17 +321,10 @@ class MancalaDisplay(Mancala):
 
     def makeMove(self, action):
         prevState = self.currentState
-        #time.sleep(2)
         state, reward = self.succAndReward(self.currentState, action)
-        #time.sleep(2)
-        print('Previous state: ', prevState)
-        print('Updated state: ', state)
         self.displayState(state)
         self.currentState = state
-        print('Current state: ', self.currentState)
         if self.isEnd(state):
-            print('isend:')
-            print(state)
             self.showWinner()
             return
         print(f"Player {state[1]}'s turn")
@@ -363,21 +344,12 @@ class MancalaDisplay(Mancala):
     def makeHumanMove(self):
         print('Making human move')
         self.root.wait_variable(self.clickedPocket)
-        #action = self.clickedPocket.get()
-        #print('action: ', action)
-        #self.clickedPocket.set(-1)
-        #self.makeMove(action)
-        #time.sleep(2)
         self.clickedPocket = tk.IntVar()
 
     def makeComputerMove(self, agent):
         print('Making computer move')
         action = agent.getNextMove(self.currentState)
-        print('action: ', action)
-        #time.sleep(2)
         self.makeMove(action)
-        time.sleep(2)
-
 
     def playGame(self, gameplay, verbose=False):
         if gameplay == 'human-human':
@@ -388,12 +360,8 @@ class MancalaDisplay(Mancala):
         elif gameplay == 'human-computer':
             agent, _, nGames = self.getGameInfo(gameplay)
             players = ['human', 'computer']
-            #firstPlayer = random.choice(players)
-            firstPlayer = 'human' # Setting to human for testing purposes - remember to uncomment previous line
-
-
-            #secondPlayer = list(set(players) - {firstPlayer})[0]
-            secondPlayer = ''
+            firstPlayer = random.choice(players)
+            secondPlayer = list(set(players) - {firstPlayer})[0]
 
             if firstPlayer == 'human':
                 print('You go first.')
@@ -409,8 +377,6 @@ class MancalaDisplay(Mancala):
                 print("Player 1's turn")
 
                 while not self.isEnd(self.currentState):
-                    #print('state: ', self.currentState)
-
                     # Player 1 makes a move
                     if self.currentState[1] == 1:
                         if firstPlayer == 'human':

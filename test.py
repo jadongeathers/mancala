@@ -13,7 +13,7 @@ def main():
     print(mancala.generateMoves(startState))
     """
     #startState[1] = 2
-    print(mancala.succAndReward(startState, 2))
+    # print(mancala.succAndReward(startState, 2))
 
     # endState = [[0, 0, 0, 0, 0, 0, 10,
     #             2, 2, 2, 2, 2, 2, 0], 2]
@@ -26,6 +26,24 @@ def main():
     #wrapAroundState = [[1, 0, 2, 3, 0, 13, 10,
                        # 2, 2, 2, 2, 2, 12, 0], 2]
     #print(mancala.succAndReward(wrapAroundState, 12))
+
+    def testCaptureWrapAround():
+        state = [[
+            0, 1, 0, 0, 0, 8, 0, 1, 0, 0, 0, 0, 8, 0
+        ], 1]
+        result = [[
+            0, 1, 0, 0, 0, 0, 11, 2, 1, 1, 1, 1, 0, 0
+        ], 2]
+        test = mancala.succAndReward(state, 5)
+        if test != result:
+            print('Started with: ', state)
+            print('Expected: ', result)
+            print('Got: ', test)
+            return
+        print('testCaptureWrapAround passed!')
+
+    testCaptureWrapAround()
+
 
 
 
