@@ -1,9 +1,12 @@
 import argparse
+import pickle
 import random
 import time
 import tkinter as tk
 import copy
+import numpy as np
 #from algorithms import *
+from collections import defaultdict
 from tqdm import tqdm
 
 
@@ -157,29 +160,33 @@ class Mancala:
         agent2 = None
 
         # Agent 1 selection
-        agentNum = int(input('Select agent 1:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\nYour selection: '))
-        if agentNum not in [1, 2, 3]:
+        agentNum = int(input('Select agent 1:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\n[4]\tQ Learning\nYour selection: '))
+        if agentNum not in [1, 2, 3, 4]:
             agentNum = input('Invalid input. Select an agent type:\n[1]\tRandom Algorithm'
-                             '\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\nYour selection: ')
+                             '\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\n[4]\tQ Learning\nYour selection: ')
         if agentNum == 1:
             agent1 = RandomAlg()
         if agentNum == 2:
             agent1 = GreedyAlg()
         if agentNum == 3:
             agent1 = MinimaxAlphaBetaAlg()
+        if agentNum == 4:
+            agent1 = QAgent()
 
         if gameplay != 'human-computer':
             # Agent 2 selection
-            agentNum = int(input('Select agent 2:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\nYour selection: '))
-            if agentNum not in [1, 2, 3]:
+            agentNum = int(input('Select agent 2:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\n[4]\tQ Learning\nYour selection: '))
+            if agentNum not in [1, 2, 3, 4]:
                 agentNum = input('Invalid input. Select an agent type:\n[1]\tRandom Algorithm'
-                                 '\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\nYour selection: ')
+                                 '\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\n[4]\tQ Learning\nYour selection: ')
             if agentNum == 1:
                 agent2 = RandomAlg()
             if agentNum == 2:
                 agent2 = GreedyAlg()
             if agentNum == 3:
                 agent2 = MinimaxAlphaBetaAlg()
+            if agentNum == 4:
+                agent2 = QAgent()
 
         nGames = int(input('Specify the number of games: '))
         return agent1, agent2, nGames
@@ -550,6 +557,20 @@ class MinimaxAlphaBetaAlg(Mancala):
 
         maxPlayer = state[1]
         return findBestAction(state, self.depth, maxPlayer, maxPlayer, None, None)
+
+
+# Model modified from previous implementation in CS 229
+
+class QAgent(Mancala):
+    def __init__(self):
+        super().__init__()
+        with open('qValues.pkl', 'rb') as f:
+            self.qValues = pickle.load(f)
+
+    def getNextMove(self, state):
+        actions = self.generateMoves(state)
+        action = max(actions, key=lambda x: self.qValues[state][x])
+        return action
 
 
 if __name__ == '__main__':
