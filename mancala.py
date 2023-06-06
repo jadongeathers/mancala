@@ -503,7 +503,10 @@ class MinimaxAlphaBetaAlg(Mancala):
                                 findBestAction(self.succAndReward(state, potentialAction)[0], depth,
                                                1, maxPlayer, alpha, beta), potentialAction)
 
-                        valuePlusAction = max(valuePlusAction, potentialValuePlusAction)
+                        if valuePlusAction[0] == potentialValuePlusAction[0]:
+                            valuePlusAction = random.choice([valuePlusAction, potentialValuePlusAction])
+                        else:
+                            valuePlusAction = max(valuePlusAction, potentialValuePlusAction)
 
                     if beta is not None and valuePlusAction[0] > beta:
                         break
@@ -542,7 +545,10 @@ class MinimaxAlphaBetaAlg(Mancala):
                                 findBestAction(self.succAndReward(state, potentialAction)[0], depth - 1,
                                                1, maxPlayer, alpha, beta), potentialAction)
 
-                        valuePlusAction = min(valuePlusAction, potentialValuePlusAction)
+                        if valuePlusAction[0] == potentialValuePlusAction[0]:
+                            valuePlusAction = random.choice([valuePlusAction, potentialValuePlusAction])
+                        else:
+                            valuePlusAction = min(valuePlusAction, potentialValuePlusAction)
 
                     if alpha is not None and valuePlusAction[0] < alpha:
                         break
@@ -569,9 +575,35 @@ class QAgent(Mancala):
 
     def getNextMove(self, state):
         actions = self.generateMoves(state)
-        action = max(actions, key=lambda x: self.qValues[state][x])
-        return action
+        actionPlusValue = None
+        for potAction in actions:
+            if state in self.qValues and potAction in self.qValues[state] and \
+                    (actionPlusValue is None or self.qValues[state][potAction] > actionPlusValue[1]):
+                actionPlusValue = (potAction, self.qValues[state][potAction])
 
+        if actionPlusValue is not None:
+            return actionPlusValue[0]
+        else:
+            return random.choice(actions)
+
+class MFMCAgent(Mancala):
+    def __init__(self):
+        super().__init__()
+        with open('qValuesMFMC.pkl', 'rb') as f:
+            self.qValues = pickle.load(f)
+
+    def getNextMove(self, state):
+        actions = self.generateMoves(state)
+        actionPlusValue = None
+        for potAction in actions:
+            if state in self.qValues and potAction in self.qValues[state] and \
+                    (actionPlusValue is None or self.qValues[state][potAction] > actionPlusValue[1]):
+                actionPlusValue = (potAction, self.qValues[state][potAction])
+
+        if actionPlusValue is not None:
+            return actionPlusValue[0]
+        else:
+            return random.choice(actions)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
