@@ -161,10 +161,10 @@ class Mancala:
         agent2 = None
 
         # Agent 1 selection
-        agentNum = int(input('Select agent 1:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\n[4]\tQ Learning\nYour selection: '))
-        if agentNum not in [1, 2, 3, 4]:
+        agentNum = int(input('Select agent 1:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\n[4]\tQ Learning\n[5]\tModel-Free Monte Carlo\nYour selection: '))
+        if agentNum not in [1, 2, 3, 4, 5]:
             agentNum = input('Invalid input. Select an agent type:\n[1]\tRandom Algorithm'
-                             '\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\n[4]\tQ Learning\nYour selection: ')
+                             '\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\n[4]\tQ Learning\n[5]\tModel-Free Monte Carlo\nYour selection: ')
         if agentNum == 1:
             agent1 = RandomAlg()
         if agentNum == 2:
@@ -173,13 +173,15 @@ class Mancala:
             agent1 = MinimaxAlphaBetaAlg()
         if agentNum == 4:
             agent1 = QAgent()
+        if agentNum == 5:
+            agent1 = MFMCAgent()
 
         if gameplay != 'human-computer':
             # Agent 2 selection
-            agentNum = int(input('Select agent 2:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\n[4]\tQ Learning\nYour selection: '))
-            if agentNum not in [1, 2, 3, 4]:
+            agentNum = int(input('Select agent 2:\n[1]\tRandom Algorithm\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\n[4]\tQ Learning\n[5]\tModel-Free Monte Carlo\nYour selection: '))
+            if agentNum not in [1, 2, 3, 4, 5]:
                 agentNum = input('Invalid input. Select an agent type:\n[1]\tRandom Algorithm'
-                                 '\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\n[4]\tQ Learning\nYour selection: ')
+                                 '\n[2]\tGreedy Algorithm\n[3]\tMinimax Algorithm\n[4]\tQ Learning\n[5]\tModel-Free Monte Carlo\nYour selection: ')
             if agentNum == 1:
                 agent2 = RandomAlg()
             if agentNum == 2:
@@ -188,6 +190,8 @@ class Mancala:
                 agent2 = MinimaxAlphaBetaAlg()
             if agentNum == 4:
                 agent2 = QAgent()
+            if agentNum == 5:
+                agent2 = MFMCAgent()
 
         nGames = int(input('Specify the number of games: '))
         return agent1, agent2, nGames
@@ -582,21 +586,13 @@ class QAgent(Mancala):
 class MFMCAgent(Mancala):
     def __init__(self):
         super().__init__()
-        with open('qValuesMFMC.pkl', 'rb') as f:
-            self.qValues = pickle.load(f)
+        with open('qValuesMFMC.json', 'r') as f:
+            self.qValues = json.load(f)
 
     def getNextMove(self, state):
         actions = self.generateMoves(state)
-        actionPlusValue = None
-        for potAction in actions:
-            if state in self.qValues and potAction in self.qValues[state] and \
-                    (actionPlusValue is None or self.qValues[state][potAction] > actionPlusValue[1]):
-                actionPlusValue = (potAction, self.qValues[state][potAction])
-
-        if actionPlusValue is not None:
-            return actionPlusValue[0]
-        else:
-            return random.choice(actions)
+        action = max(actions, key=lambda x: self.qValues.get(str(state), {}).get(str(x), 0))
+        return action
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
