@@ -1,6 +1,7 @@
 import argparse
 import pickle
 import random
+import json
 import time
 import tkinter as tk
 import copy
@@ -570,21 +571,13 @@ class MinimaxAlphaBetaAlg(Mancala):
 class QAgent(Mancala):
     def __init__(self):
         super().__init__()
-        with open('qValues.pkl', 'rb') as f:
-            self.qValues = pickle.load(f)
+        with open('qValues.json', 'r') as f:
+            self.qValues = json.load(f)
 
     def getNextMove(self, state):
         actions = self.generateMoves(state)
-        actionPlusValue = None
-        for potAction in actions:
-            if state in self.qValues and potAction in self.qValues[state] and \
-                    (actionPlusValue is None or self.qValues[state][potAction] > actionPlusValue[1]):
-                actionPlusValue = (potAction, self.qValues[state][potAction])
-
-        if actionPlusValue is not None:
-            return actionPlusValue[0]
-        else:
-            return random.choice(actions)
+        action = max(actions, key=lambda x: self.qValues.get(str(state), {}).get(str(x), 0))
+        return action
 
 class MFMCAgent(Mancala):
     def __init__(self):
