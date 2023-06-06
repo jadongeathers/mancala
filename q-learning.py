@@ -1,4 +1,5 @@
 import pickle
+import json
 import random
 from collections import defaultdict
 from mancala import Mancala
@@ -16,13 +17,13 @@ class QAgent(Mancala):
     def decayEpsilon(self):
         self.epsilon *= 0.99
 
-    def stateToTuple(self, state):
-        return tuple(state[0]), state[1]
+    def stateToStr(self, state):
+        return str(state)
 
     def update(self, state, action):
         nextState, reward = self.succAndReward(state, action)
-        state = self.stateToTuple(state)
-        nextState = self.stateToTuple(nextState)
+        state = self.stateToStr(state)
+        nextState = self.stateToStr(nextState)
         bestValue = max(self.qValues[nextState]) if nextState in self.qValues else 0
         tempDiff = reward + self.discount * bestValue - self.qValues[state][action]
         self.qValues[state][action] += self.lr * tempDiff
@@ -34,10 +35,10 @@ class QAgent(Mancala):
 
         # with probability (1 - epsilon) act greedily (exploit)
         else:
-            if self.stateToTuple(state) not in self.qValues:
+            if self.stateToStr(state) not in self.qValues:
                 return random.choice(self.generateMoves(state))
 
-            state = self.stateToTuple(state)
+            state = self.stateToStr(state)
             bestValue = max(self.qValues[state])
             bestActions = [i for i, val in enumerate(self.qValues[state]) if val == bestValue]
             return random.choice(bestActions)
@@ -70,5 +71,5 @@ if __name__ == '__main__':
 
     # Save the learned Q-values table for later use, if desired
     q_values_table = agent.qValues
-    with open('qValues.pkl', 'wb') as f:
-        pickle.dump(q_values_table, f)
+    with open('qValues.json', 'w') as f:
+        json.dump(q_values_table, f)
